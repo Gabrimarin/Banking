@@ -1,104 +1,31 @@
-const functions = require("@google-cloud/functions-framework");
-const Firestore = require("@google-cloud/firestore");
+import { onRequest } from "firebase-functions/v2/https";
+import { firestore } from "../../lib/firestore";
 
-const firestore = new Firestore({
-  projectId: "banking-390713",
-});
-
-functions.http("account", async (req, res) => {
-  if (req.method === "POST") {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).send({
-        error: "Email is required.",
-      });
-    }
-
-    try {
-      const accountDoc = firestore.doc(`accounts/${email}`);
-      const accountSnapshot = await accountDoc.get();
-      if (accountSnapshot.exists) {
-        return res.status(400).send({
-          error: "Account already exists.",
-        });
-      }
-
-      await accountDoc.set({
-        email,
-        balance: 0,
-        transactions: {},
-      });
-
-      return res.send({
-        message: "Account created successfully.",
-      });
-    } catch (err) {
-      console.error(err);
-      return res.status(500).send({
-        error: "Error creating account. Please try again later.",
-        devError: JSON.stringify(err),
-      });
-    }
-  }
-
-  if (req.method === "GET") {
-    const { email } = req.query;
-    if (!email) {
-      return res.status(400).send({
-        error: "Email is required.",
-      });
-    }
-    try {
-      const accountDoc = firestore.doc(`accounts/${email}`);
-      const accountSnapshot = await accountDoc.get();
-      const transactionsSnapshot = await accountDoc
-        .collection("transactions")
-        .get();
-      const transactions = transactionsSnapshot.docs.map((doc) => doc.data());
-      if (!accountSnapshot.exists) {
-        return res.status(404).send({
-          error: "Account not found.",
-        });
-      }
-
-      return res.send({
-        email: accountSnapshot.data().email,
-        balance: accountSnapshot.data().balance,
-        transactions,
-      });
-    } catch (err) {
-      return res.status(500).send({
-        error: "Error getting account. Please try again later.",
-        devError: JSON.stringify(err),
-      });
-    }
-  }
-
-  res.status(405).send("Method Not Allowed");
-});
-
-functions.http("deposit", async (req, res) => {
+export const deposit = onRequest(async (req, res) => {
   if (req.method === "POST") {
     const { email, amount } = req.body;
     if (!email) {
-      return res.status(400).send({
+      res.status(400).send({
         error: "Email is required.",
       });
+      return;
     }
     if (!amount || amount <= 0 || isNaN(parseFloat(amount))) {
-      return res.status(400).send({
+      res.status(400).send({
         error: "Amount must be a positive number.",
       });
+      return;
     }
     try {
       const accountDoc = firestore.doc(`accounts/${email}`);
       const accountSnapshot = await accountDoc.get();
       if (!accountSnapshot.exists) {
-        return res.status(404).send({
+        res.status(404).send({
           error: "Account not found.",
         });
+        return;
       }
-      const oldBalance = accountSnapshot.data().balance;
+      const oldBalance = accountSnapshot?.data()?.balance;
       const newBalance = oldBalance + amount;
       await firestore.runTransaction(async (transaction) => {
         transaction.update(accountDoc, { balance: newBalance });
@@ -112,48 +39,54 @@ functions.http("deposit", async (req, res) => {
           timestamp,
         });
       });
-      return res.send({
+      res.send({
         message: "Funds deposited successfully.",
         balance: newBalance,
       });
+      return;
     } catch (err) {
-      return res.status(500).send({
+      res.status(500).send({
         error: "Error depositing funds. Please try again later.",
         devError: JSON.stringify(err),
       });
+      return;
     }
   }
 
   res.status(405).send("Method Not Allowed");
 });
 
-functions.http("withdraw", async (req, res) => {
+export const withdraw = onRequest(async (req, res) => {
   if (req.method === "POST") {
     const { email, amount } = req.body;
     if (!email) {
-      return res.status(400).send({
+      res.status(400).send({
         error: "Email is required.",
       });
+      return;
     }
     if (!amount || amount <= 0 || isNaN(parseFloat(amount))) {
-      return res.status(400).send({
+      res.status(400).send({
         error: "Amount must be a positive number.",
       });
+      return;
     }
     try {
       const accountDoc = firestore.doc(`accounts/${email}`);
       const accountSnapshot = await accountDoc.get();
       if (!accountSnapshot.exists) {
-        return res.status(404).send({
+        res.status(404).send({
           error: "Account not found.",
         });
+        return;
       }
-      const oldBalance = accountSnapshot.data().balance;
+      const oldBalance = accountSnapshot?.data()?.balance;
       const newBalance = oldBalance - amount;
       if (newBalance < 0) {
-        return res.status(400).send({
+        res.status(400).send({
           error: "Insufficient funds.",
         });
+        return;
       }
       await firestore.runTransaction(async (transaction) => {
         transaction.update(accountDoc, { balance: newBalance });
@@ -167,32 +100,36 @@ functions.http("withdraw", async (req, res) => {
           timestamp,
         });
       });
-      return res.send({
+      res.send({
         message: "Funds withdrawn successfully.",
         balance: newBalance,
       });
+      return;
     } catch (err) {
-      return res.status(500).send({
+      res.status(500).send({
         error: "Error withdrawing funds. Please try again later.",
         devError: JSON.stringify(err),
       });
+      return;
     }
   }
-  return res.status(405).send("Method Not Allowed");
+  res.status(405).send("Method Not Allowed");
 });
 
-functions.http("transfer", async (req, res) => {
+export const transfer = onRequest(async (req, res) => {
   if (req.method === "POST") {
     const { sender, recipient, amount } = req.body;
     if (!sender || !recipient) {
-      return res.status(400).send({
+      res.status(400).send({
         error: "Recipient and sender emails are required.",
       });
+      return;
     }
     if (!amount || amount <= 0 || isNaN(parseFloat(amount))) {
-      return res.status(400).send({
+      res.status(400).send({
         error: "Amount must be a positive number.",
       });
+      return;
     }
     try {
       const senderAccountDoc = firestore.doc(`accounts/${sender}`);
@@ -215,12 +152,14 @@ functions.http("transfer", async (req, res) => {
 
       await firestore.runTransaction(async (transaction) => {
         const newReceiverBalance =
-          receiverAccountSnapshot.data().balance + amount;
-        const newSenderBalance = senderAccountSnapshot.data().balance - amount;
+          receiverAccountSnapshot?.data()?.balance + amount;
+        const newSenderBalance =
+          senderAccountSnapshot?.data()?.balance - amount;
         if (newSenderBalance < 0) {
-          return res.status(400).send({
+          res.status(400).send({
             error: "Insufficient funds.",
           });
+          return;
         }
         transaction.update(senderAccountDoc, { balance: newSenderBalance });
         transaction.update(receiverAccountDoc, { balance: newReceiverBalance });
@@ -244,10 +183,12 @@ functions.http("transfer", async (req, res) => {
       res.send({
         message: "Funds transferred successfully.",
       });
+      return;
     } catch (err) {
       res.status(500).send({
         error: "Error transferring funds. Please try again later.",
       });
+      return;
     }
   }
 
