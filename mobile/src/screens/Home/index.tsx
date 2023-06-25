@@ -5,16 +5,14 @@ import {
   Body,
   Container,
   Header,
-  TransactionButton,
-  TransactionButtonText,
   TransactionContainer,
 } from "./style";
 import { SubtitleText, TitleText } from "../../components/common/Typography";
 import { MaterialIcons } from "@expo/vector-icons";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { useModal } from "../../hooks/modal.hook";
 import { useNavigation } from "@react-navigation/native";
 import { transactionTypesData } from "../../ts/types/transaction.types";
+import { TransactionButton } from "./components/TransactionButton";
 
 export function Home() {
   const { account, signOut } = useAccountContext();
@@ -23,7 +21,9 @@ export function Home() {
     balance: 0,
     transactions: [],
   };
-  console.log(transactions);
+  const sortedTransactions = transactions.sort(
+    (a, b) => b.timestamp - a.timestamp
+  );
   const navigation = useNavigation();
   return (
     <Container>
@@ -61,47 +61,26 @@ export function Home() {
             onPress={() =>
               navigation.navigate("Transaction", { type: "deposit" })
             }
-            type="deposit"
-          >
-            <MaterialIcons
-              name="arrow-downward"
-              size={24}
-              color={transactionTypesData["deposit"].colors.primary}
-            />
-            <TransactionButtonText type="deposit">
-              Deposit
-            </TransactionButtonText>
-          </TransactionButton>
+            color={transactionTypesData["deposit"].colors.primary}
+            icon="arrow-downward"
+            text="Deposit"
+          />
           <TransactionButton
             onPress={() =>
               navigation.navigate("Transaction", { type: "withdraw" })
             }
-            type="withdraw"
-          >
-            <MaterialIcons
-              name="arrow-upward"
-              size={24}
-              color={transactionTypesData["withdraw"].colors.primary}
-            />
-            <TransactionButtonText type="withdraw">
-              Withdraw
-            </TransactionButtonText>
-          </TransactionButton>
+            color={transactionTypesData["withdraw"].colors.primary}
+            icon="arrow-upward"
+            text="Withdraw"
+          />
           <TransactionButton
             onPress={() =>
               navigation.navigate("Transaction", { type: "transfer" })
             }
-            type="transfer"
-          >
-            <MaterialIcons
-              name="compare-arrows"
-              size={24}
-              color={transactionTypesData["transfer"].colors.primary}
-            />
-            <TransactionButtonText type="transfer">
-              Transfer
-            </TransactionButtonText>
-          </TransactionButton>
+            color={transactionTypesData["transfer"].colors.primary}
+            icon="compare-arrows"
+            text="Transfer"
+          />
         </View>
         <AccountText style={{ marginTop: 10 }}>Transactions</AccountText>
         <ScrollView>
@@ -117,10 +96,13 @@ export function Home() {
                       {transaction.type.toUpperCase()}{" "}
                       {transaction.type === "transfer" &&
                         (transaction.sender === email ? (
-                          <Text>SEND</Text>
+                          <Text>SENT</Text>
                         ) : (
                           <Text>RECEIVED</Text>
                         ))}
+                    </Text>
+                    <Text>
+                      {new Date(transaction.timestamp).toLocaleString()}
                     </Text>
                     {transaction.type === "transfer" && (
                       <View>
@@ -133,7 +115,7 @@ export function Home() {
                     )}
                   </View>
                   <View>
-                    <Text>
+                    <Text style={{ fontSize: 16 }}>
                       {transaction.amount.toLocaleString("en-US", {
                         style: "currency",
                         currency: "USD",

@@ -18,3 +18,9 @@ export const Container = styled.View`
   background-color: ${(props) => getBackgroundColor(props)};
   padding: 20px;
 `;
+
+export const Center = styled.View`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+`;

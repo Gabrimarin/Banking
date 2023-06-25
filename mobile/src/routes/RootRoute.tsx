@@ -33,7 +33,7 @@ export default function RootRoute() {
             backgroundColor: theme.palette.primary.main,
           },
           headerTintColor: theme.palette.secondary.contrastText,
-          animation: "slide_from_bottom",
+          animation: "slide_from_right",
         }}
       >
         {authenticated ? (
@@ -50,6 +50,7 @@ export default function RootRoute() {
               component={Transaction}
               options={{
                 headerShown: false,
+                animation: "slide_from_bottom",
               }}
             />
           </>

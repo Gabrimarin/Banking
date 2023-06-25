@@ -48,21 +48,3 @@ export const TransactionContainer = styled.View`
   border-left-color: ${(props: { type: TransactionType }) =>
     transactionTypesData[props.type].colors.primary};
 `;
-
-export const TransactionButton = styled.TouchableOpacity`
-  border-radius: 50px;
-  background-color: white;
-  width: 100px;
-  align-items: center;
-  justify-content: center;
-  border-width: 2px;
-  border-color: ${(props: { type: TransactionType }) =>
-    transactionTypesData[props.type].colors.primary};
-`;
-
-export const TransactionButtonText = styled.Text`
-  font-size: 14px;
-  font-weight: bold;
-  color: ${(props: { type: TransactionType }) =>
-    transactionTypesData[props.type].colors.primary};
-`;

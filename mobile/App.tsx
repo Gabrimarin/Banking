@@ -7,13 +7,16 @@ import { StatusBar } from "react-native";
 
 export default function App() {
   return (
-    <AccountContextProvider>
-      <RootSiblingParent>
-        <ThemeProvider theme={theme}>
+    <RootSiblingParent>
+      <ThemeProvider theme={theme}>
+        <AccountContextProvider>
           <RootRoute />
-        </ThemeProvider>
-      </RootSiblingParent>
-      <StatusBar barStyle="light-content" />
-    </AccountContextProvider>
+        </AccountContextProvider>
+      </ThemeProvider>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={theme.palette.primary.main}
+      />
+    </RootSiblingParent>
   );
 }

@@ -1,6 +1,13 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { getAccount } from "../services/api/account";
 import { Account } from "../ts/types/account.types";
+import {
+  getStoredString,
+  removeStoredString,
+  storeString,
+} from "../services/storage";
+import { View } from "react-native";
+import { LoadingScreen } from "../components/common/LoadingScreen";
 
 const AccountContext = createContext<{
   account: Account | null;
@@ -24,23 +31,34 @@ export function AccountContextProvider({
   children: React.ReactNode;
 }) {
   const [account, setAccount] = useState<Account | null>(null);
+  const [authenticating, setAuthenticating] = useState(false);
 
   async function signIn(email: string) {
     const response = await getAccount({ email });
+    await storeString("email", email);
     setAccount(response.data);
   }
 
-  function signOut() {
+  async function signOut() {
     setAccount(null);
+    await removeStoredString("email");
   }
 
   async function updateAccount() {
-    if (!account) {
-      return;
-    }
-    const response = await getAccount({ email: account.email });
-    setAccount(response.data);
+    const storedEmail = await getStoredString("email");
+    if (storedEmail) return signIn(storedEmail);
+    await signOut();
   }
+
+  useEffect(() => {
+    async function loadAccount() {
+      setAuthenticating(true);
+      await updateAccount();
+      setAuthenticating(false);
+    }
+
+    loadAccount();
+  }, []);
 
   return (
     <AccountContext.Provider
@@ -53,7 +71,7 @@ export function AccountContextProvider({
         authenticated: !!account,
       }}
     >
-      {children}
+      {authenticating ? <LoadingScreen /> : children}
     </AccountContext.Provider>
   );
 }

@@ -105,7 +105,7 @@ export function Transaction() {
                   onChange(value ?? 0);
                 }}
                 style={{
-                  fontSize: 32,
+                  fontSize: 38,
                   color: "#fff",
                 }}
               />
